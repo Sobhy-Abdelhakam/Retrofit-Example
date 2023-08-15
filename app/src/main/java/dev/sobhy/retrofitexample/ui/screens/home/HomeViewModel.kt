@@ -1,12 +1,12 @@
 package dev.sobhy.retrofitexample.ui.screens.home
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.sobhy.retrofitexample.data.Repo
 import dev.sobhy.retrofitexample.data.model.Article
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -23,18 +23,37 @@ class HomeViewModel : ViewModel() {
     fun getArticles() {
         _state.update { it.copy(isLoading = true) }
         viewModelScope.launch {
-            val list = repository.getNews("bitcoins")
+            val remoteList = repository.getNews("bitcoins")
+            val localList = repository.getNewsFromDb().first()
+            val viewedList = compareLocalAndRemoteAndReturnViewedList(remoteList, localList)
             _state.update {
-                it.copy(isLoading = false, list = list)
+                it.copy(isLoading = false, list = viewedList)
             }
         }
     }
 
-    fun saveArticle(article: Article) {
+    private fun compareLocalAndRemoteAndReturnViewedList(
+        remoteList: List<Article>,
+        localList: List<Article>?
+    ): List<Article> {
+        return remoteList.onEach { remoteArticle ->
+            if (localList?.find { localArticle ->
+                    localArticle.title == remoteArticle.title
+                } != null) {
+                remoteArticle.isSaved = true
+            }
+        }
+    }
+
+    fun saveArticle(article: Article, index: Int) {
+        val newList = state.value.list
+        newList[index].isSaved = true
+        _state.update {
+            it.copy(list = newList)
+        }
         viewModelScope.launch {
             repository.insertNew(article)
         }
-
     }
 
     fun dismissDialog() {

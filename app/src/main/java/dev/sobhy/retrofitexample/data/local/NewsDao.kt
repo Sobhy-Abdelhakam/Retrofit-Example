@@ -17,4 +17,7 @@ interface NewsDao {
     fun getSavedArticle(): Flow<List<Article>>
     @Query("DELETE FROM article")
     suspend fun deleteAllArticle()
+
+    @Query("select * from article where title like :search or description like :search ")
+    fun getArticleByTitle(search: String): Flow<List<Article>>
 }

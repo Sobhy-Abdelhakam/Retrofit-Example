@@ -16,4 +16,6 @@ class Repo(
     suspend fun deleteAllNew() = db.newsDao().deleteAllArticle()
     suspend fun getNewsFromDb() = db.newsDao().getSavedArticle()
 
+    suspend fun searchForArticle(search: String) = db.newsDao().getArticleByTitle(search)
+
 }

@@ -9,7 +9,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Text
@@ -29,7 +30,10 @@ import dev.sobhy.retrofitexample.ui.screens.composable.Loading
 
 @Composable
 fun HomeScreen(viewModel: HomeViewModel, navController: NavHostController) {
+
     val state by viewModel.state.collectAsState()
+    val scrollState = rememberLazyListState()
+
     Box(modifier = Modifier.fillMaxSize()) {
         ErrorDialog(
             show = state.dialogModel?.show ?: false,
@@ -42,18 +46,22 @@ fun HomeScreen(viewModel: HomeViewModel, navController: NavHostController) {
         }
         Box(modifier = Modifier.fillMaxSize()) {
             Loading(isLoading = state.isLoading, modifier = Modifier.align(Alignment.Center))
-            LazyColumn() {
-                items(state.list) {
-                    HomeListItem(it) {article ->
-                        viewModel.saveArticle(article)
+            LazyColumn(state = scrollState, modifier = Modifier.fillMaxSize()) {
+
+                itemsIndexed(state.list) { index, article ->
+
+
+                    HomeListItem(article) { article ->
+                        viewModel.saveArticle(article, index)
                     }
                 }
+
             }
 
             Button(
                 onClick = {
-                          navController.navigate("saved")
-                          }, modifier = Modifier
+                    navController.navigate("saved")
+                }, modifier = Modifier
                     .fillMaxWidth()
                     .padding(14.dp)
                     .align(Alignment.BottomCenter)
@@ -102,10 +110,13 @@ fun HomeListItem(article: Article, onClick: (Article) -> Unit) {
                 )
             Spacer(modifier = Modifier.weight(1f))
             Button(
-                onClick = { onClick(article) },
+                onClick = {
+                    onClick(article)
+                },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 32.dp)
+                    .padding(horizontal = 32.dp),
+                enabled = !article.isSaved
             ) {
                 Text(text = "Insert")
             }
